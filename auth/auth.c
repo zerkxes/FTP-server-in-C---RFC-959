@@ -30,13 +30,15 @@ int authHelper(const int connfd, const char* uName){
     int found = 0;
     if((fp=fopen("users.txt", "r"))==NULL)failureLog("Fatal, unable to read users.txt");
     
+    char *p = getName;
     while(getline(&getName, &nameS, fp)!=-1){
-        char *p = getName;
+        p = getName;
         if(strcmp(strtok(p, " "), uName)==0){
             found = 1;
             break;
         }
     }
+    free(p);
 
     if(found==0){
             Send(connfd, invUName, strlen(invUName));
@@ -46,29 +48,39 @@ int authHelper(const int connfd, const char* uName){
 
     if(strcmp(uName, "anonymous")==0 || strcmp(uName, "ANONYMOUS")==0){
         Send(connfd, okAnon, strlen(okAnon));
+        free(getName);
         return 0;
     }
 
     char *pword;
     if((recv(connfd, pword, maxPlen, 0))<0)failureLog("Unable to read passwword");
+    
+    
+    free(fp);
 
-    char* p = strtok(pword, " ");
+    p = strtok(pword, " ");
     if(strcmp(p, "PASS")!=0){
         Send(connfd, invInp, strlen(invInp));
         close(connfd);
+        free(p);free(getName);
         return -1;
     }
 
     p = strtok(NULL, "\n ");
     char *pass = strtok(getName, " ");
     pass = strtok(NULL, "\n");
+    
+    free(getName);
+    
     if(strcmp(p,pass)==0){
         Send(connfd, okPass, strlen(okPass));
+        free(p);free(getName);free(pass);
         return 1;
     }
     else {
         Send(connfd, invUName, strlen(invUName));
         close(connfd);
+        free(p);free(getName);free(pass);
         return -1;
     }
 }
@@ -78,7 +90,6 @@ int authHelper(const int connfd, const char* uName){
 int userAuth(const int connfd){
     char buff[maxUNameL];
     char* inp[2];
-    int user = -1;
     int read = -1;
     if((read = recv(connfd, buff, maxUNameL, 0))==-1)failureLog("unable to read");
 
@@ -91,7 +102,6 @@ int userAuth(const int connfd){
         close(connfd);
         return -1;
     }
-    int f = authHelper(connfd, inp[1]);
-
-    return user;
+    free(p);
+    return authHelper(connfd, inp[1]);
 }
