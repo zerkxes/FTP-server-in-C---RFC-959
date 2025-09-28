@@ -24,9 +24,9 @@ int Send(int connfd, const char* buff, size_t size){
 
 
 int authHelper(const int connfd, const char* uName){
-    char* getName;
+    char* getName = NULL;
     size_t nameS = maxUNameL;
-    FILE* fp;
+    FILE* fp = NULL;
     int found = 0;
     if((fp=fopen("users.txt", "r"))==NULL)failureLog("Fatal, unable to read users.txt");
     
