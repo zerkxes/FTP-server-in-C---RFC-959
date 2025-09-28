@@ -11,8 +11,10 @@
 
 int main(int argc, char** argv){
     int connfd  =-1;
-    FILE* fp;char buff[msgBuf+2];
+    FILE* fp = NULL;
+    char buff[msgBuf+2];
     char tempMsg[100];
+    if(argc!=2)err_sys("No port provided. Usage <executable> <port number>");
 
     const int listenfd = init(atoi(argv[1]));
 
@@ -24,8 +26,9 @@ int main(int argc, char** argv){
         sprintf(temp,"%s (%s)\r\n", ok220, strtok(ctime(&tick), "\n"));
 
         Send(connfd, temp, strlen(temp));
-        const int user = userAuth(connfd);
 
+        const int user = userAuth(connfd);
+        printf("%d\n", user);
         // if((fp = fopen("welcome.txt", "r"))==NULL)err_sys("welcome.txt read error\n");
         // fread(buff, msgBuf, 1, fp);
         // fclose(fp);
