@@ -28,15 +28,11 @@ int main(int argc, char** argv){
         Send(connfd, temp, strlen(temp));
 
         const int user = userAuth(connfd);
-        printf("%d\n", user);
         // if((fp = fopen("welcome.txt", "r"))==NULL)err_sys("welcome.txt read error\n");
         // fread(buff, msgBuf, 1, fp);
         // fclose(fp);
         // char sendBuff[msgBuf + 10];
         // snprintf(sendBuff, sizeof(sendBuff),"%s\r\n", buff);
-
-
-        memset(&buff, 0, sizeof(buff));
         if((close(connfd))==-1)err_sys("close conn error\n");
     }   
     return 0;
