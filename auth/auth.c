@@ -42,6 +42,12 @@ int Send(int connfd, const char* buff, size_t size){
     return val;
 }
 
+int Recv(const int connfd, char* buff, const size_t size){
+    int val = 0;
+    if((val = recv(connfd, buff, sizeof(buff), 0))==-1)failureLog("unable to receive");
+    return val;
+}
+
 
 int authHelper(const int connfd, const char* uName){
     char getLine[maxUNameL+maxPlen];
