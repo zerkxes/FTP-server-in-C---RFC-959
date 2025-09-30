@@ -8,7 +8,7 @@
 
 #define okAnon "332 No need account for login.\r\n"
 #define okUser "331 User name okay, password needed.\r\n"
-#define okPass "230 User logged in, proceed.\r\n"
+//#define okPass "230 User logged in, proceed.\r\n"
 #define invUName "430 Invalid Username or Password.\r\n"
 #define okNA "202 Command not implemented, superfluous at this site.\r\n"
 #define invInp "500 Syntax error, command unrecognized and the requested action did not take place. This may include errors such as command line too long.\r\n"
@@ -84,7 +84,7 @@ int authHelper(const int connfd, const char* uName){
     p = strtok(NULL, "\n");
     
     if(strcmp(trim(p),trim(getPass))==0){
-        Send(connfd, okPass, strlen(okPass));
+        //Send(connfd, okPass, strlen(okPass));
         return 1;
     }
     else {
@@ -110,7 +110,7 @@ int userAuth(const int connfd){
     }
 
     if(strcmp(inp[1], "anonymous")==0 || strcmp(inp[1], "ANONYMOUS")==0){
-        Send(connfd, okAnon, strlen(okAnon));
+        //Send(connfd, okPass, strlen(okAnon));
         return 0;
     }
     int f = authHelper(connfd, inp[1]);

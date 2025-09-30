@@ -8,6 +8,7 @@
 
 #define msgBuf 1024
 #define ok220 "220 Connected to zerkxes FTP server."
+#define okPass "230 User logged in, proceed.\r\n"
 
 int main(int argc, char** argv){
     int connfd  =-1;
@@ -28,11 +29,16 @@ int main(int argc, char** argv){
         Send(connfd, temp, strlen(temp));
 
         const int user = userAuth(connfd);
-        // if((fp = fopen("welcome.txt", "r"))==NULL)err_sys("welcome.txt read error\n");
-        // fread(buff, msgBuf, 1, fp);
-        // fclose(fp);
-        // char sendBuff[msgBuf + 10];
-        // snprintf(sendBuff, sizeof(sendBuff),"%s\r\n", buff);
+        if(user==-1){
+            if((close(connfd))==-1)err_sys("close conn error\n");
+        }
+        if((fp = fopen("welcome.txt", "r"))==NULL)err_sys("welcome.txt read error\n");
+        fread(buff, msgBuf, 1, fp);
+        fclose(fp);
+        char sendBuff[msgBuf+4];
+        snprintf(sendBuff, sizeof(sendBuff),"%s", buff);
+        Send(connfd, buff, strlen(buff));
+        
         if((close(connfd))==-1)err_sys("close conn error\n");
     }   
     return 0;
