@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -8,7 +7,6 @@
 
 void err_sys(const char* x){
     perror(x);
-    exit(1);
 }
 
 int init(int port){
