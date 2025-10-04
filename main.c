@@ -9,8 +9,6 @@
 #include <unistd.h>
 #include <time.h>
 
-
-#define msgBuff 1024
 #define commBuff 5
 #define CDUP 6383925617
 #define CWD 193452899
@@ -63,7 +61,7 @@ void setUserVariables(const int user){
 }
 
 int initDataCon(const int port, const int connfd){
-    const int dataPort = port - 1;
+    const int dataPort = port;
     int out[6];
     out[0] = 127;
     out[1] = 0;
@@ -76,11 +74,14 @@ int initDataCon(const int port, const int connfd){
     char buff[msgBuff];
     snprintf(buff, sizeof(buff), "%s (%d,%d,%d,%d,%d,%d)\r\n", okPasv, out[0], out[1], out[2], out[3], out[4], out[5]);
     Send(connfd, buff, strlen(buff));
+
     struct sockaddr_in clientaddr;
     socklen_t clientaddr_size;
-    if((datafd = accept(listenfd, (struct sockaddr*)&clientaddr, &clientaddr_size))==-1)err_sys("accept error\r\n");
-    memset(buff, 0, sizeof(buff));
+    if((datafd = accept(listenfd, (struct sockaddr*)NULL, NULL))==-1)err_sys("accept error\r\n");
+    printf("Connection accepted\n");
+    memset(buff, '\0', sizeof(buff));
     snprintf(buff, sizeof(buff), "%s (%s)\r\n", okFile, inet_ntoa(clientaddr.sin_addr));
+    Send(connfd, buff, strlen(buff));
     return datafd;
 }
 

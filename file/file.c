@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 
 #define home "/home/basu"
-#define msgBuff 1024
+#define msgBuff 2048
 #define error "451 Requested action aborted. Local error in processing.\r\n"
 
 int userType = -1;
@@ -45,7 +45,16 @@ char* ls(){
         strcpy(readBuff, error);
         return readBuff;
     }
-    fread(readBuff, msgBuff, 1, fp);
+    int n = 0;
+    int c = 0;
+    while(n<msgBuff && (c = fgetc(fp))!=EOF){
+        char a = c;
+        if(a == ('\n')){
+            readBuff[n++] = '\r';
+            readBuff[n++] = '\n';
+        }
+        else readBuff[n++] = a;
+    }
     pclose(fp);
     return readBuff;
 }
