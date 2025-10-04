@@ -29,6 +29,7 @@
 #define QUIT 6384446856
 #define SYST 6384523416
 #define PASV 6384389471
+#define FEAT 6384033861
 
 #define ok220 "220 Connected to zerkxes FTP server."
 #define okPass "230 User logged in, proceed.\r\n"
@@ -128,11 +129,12 @@ int main(int argc, char** argv){
         for(;;){
 
             char recvBuff[msgBuff];char comm[commBuff];
+            char* args;
             char sendMsgBuff[msgBuff +4];
             char* sendMsgLiteral = NULL;
             int status = -1;
             Recv(connfd, recvBuff, msgBuff);
-            sscanf(recvBuff, "%s", comm);
+            sscanf(recvBuff, "%s %s", comm, args);
             trim(comm);
 
             printf("%s\n", recvBuff);
@@ -141,11 +143,24 @@ int main(int argc, char** argv){
                 case SYST:
                     Send(connfd, okEnv, strlen(okEnv));
                     break;
+                case FEAT:
+                    sendMsgLiteral = "PASV\r\n""PWD\r\n" "LIST\r\n" "CWD\r\n" "CDUP\r\n" "QUIT\r\n";
+                    Send(connfd, sendMsgLiteral, strlen(sendMsgLiteral));
+                    sendMsgLiteral = NULL;
+                    break;
                 case CDUP:
                     status = cdup();
                     if(status)Send(connfd, okAction, strlen(okAction));
                     break;
                 case CWD:
+                    args = trim(args);
+                    status = cd (args);
+                    if(status == -1) Send(connfd, invDir, strlen(invDir));
+                    else {
+                        snprintf(sendMsgBuff, msgBuff, "%s %s\r\n", "250 Current Directory changed to :", currPath);
+                        Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
+                    }
+                    break;
                 break;
                 case RETR:
                 break;
