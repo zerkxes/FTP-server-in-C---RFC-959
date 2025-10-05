@@ -103,7 +103,8 @@ int main(int argc, char** argv){
     if(argc!=2)err_sys("No port provided. Usage <executable> <port number>");
     const int listenfd = init(atoi(argv[1]));
 
-    u:for(;;){
+    for(;;){
+
         if((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL))==-1)err_sys("accept error\n");
         
         time_t tick = time(NULL);
@@ -214,14 +215,13 @@ int main(int argc, char** argv){
                     Send(connfd, badComm, strlen(badComm));
                     break;
                 }
-                memset(comm, 0, commBuff);
-                memset(recvBuff, 0, msgBuff);
-                memset(sendMsgBuff, 0, msgBuff);
-                memset(args, 0, msgBuff);
-                free(currPath);
             }
-            
+            memset(comm, 0, commBuff);
+            memset(recvBuff, 0, msgBuff);
+            memset(sendMsgBuff, 0, msgBuff);
+            memset(args, 0, msgBuff);
         }
+        u:free(currPath);
     }   
     return 0;
 }
