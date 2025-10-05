@@ -43,7 +43,7 @@ int Send(int connfd, const char* buff, size_t size){
 
 int Recv(const int connfd, char* buff, const size_t size){
     int val = 0;
-    if((val = recv(connfd, buff, sizeof(buff), 0))==-1)failureLog("unable to receive");
+    if((val = recv(connfd, buff, size, 0))==-1)return -1;
     return val;
 }
 

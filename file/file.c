@@ -14,9 +14,10 @@ char* currPath = home; // Moving up further than /home is not allowed
 int cd(const char* path){
     struct stat sb;
     char temp[msgBuff];
-    snprintf(temp, sizeof(home) + sizeof(path) + 1, "%s/%s", home, path);
+    snprintf(temp, msgBuff, "%s/%s", home, path);
     if(stat(temp, &sb)==0 && S_ISDIR(sb.st_mode)){
-        currPath = temp;
+        memset(currPath, 0, msgBuff);
+        strcpy(currPath, temp);
         return 1;
     }
     else return -1;

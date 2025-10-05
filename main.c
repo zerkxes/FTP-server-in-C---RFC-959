@@ -77,10 +77,9 @@ int initDataCon(const int port, const int connfd){
     Send(connfd, buff, strlen(buff));
 
     struct sockaddr_in clientaddr;
-    socklen_t clientaddr_size;
-    if((datafd = accept(listenfd, (struct sockaddr*)NULL, NULL))==-1)err_sys("accept error\r\n");
-    printf("Connection accepted\n");
-    memset(buff, '\0', sizeof(buff));
+    socklen_t clientaddr_size = sizeof(clientaddr);
+    if((datafd = accept(listenfd, (struct sockaddr*)&clientaddr, &clientaddr_size))==-1)err_sys("datacon accept error\r\n");
+    memset(buff, 0, sizeof(buff));
     snprintf(buff, sizeof(buff), "%s (%s)\r\n", okFile, inet_ntoa(clientaddr.sin_addr));
     Send(connfd, buff, strlen(buff));
     return datafd;
@@ -129,22 +128,22 @@ int main(int argc, char** argv){
         for(;;){
 
             char recvBuff[msgBuff];char comm[commBuff];
-            char* args;
+            char args[msgBuff];
             char sendMsgBuff[msgBuff +4];
             char* sendMsgLiteral = NULL;
             int status = -1;
-            Recv(connfd, recvBuff, msgBuff);
-            sscanf(recvBuff, "%s %s", comm, args);
+            if(Recv(connfd, recvBuff, msgBuff) == -1)break;
+            sscanf(recvBuff, "%s %s\r\n", comm, args);
             trim(comm);
 
-            printf("%s\n", recvBuff);
+            fprintf(stderr,"%s\n%s\n", comm, args);
 
             switch(hash(comm)){
                 case SYST:
                     Send(connfd, okEnv, strlen(okEnv));
                     break;
                 case FEAT:
-                    sendMsgLiteral = "PASV\r\n""PWD\r\n" "LIST\r\n" "CWD\r\n" "CDUP\r\n" "QUIT\r\n";
+                    sendMsgLiteral = "211-Supported Extensions:\r\n"" PASV\r\n"" PWD\r\n"" LIST\r\n"" CWD\r\n"" CDUP\r\n"" QUIT\r\n""211 End.\r\n";
                     Send(connfd, sendMsgLiteral, strlen(sendMsgLiteral));
                     sendMsgLiteral = NULL;
                     break;
@@ -153,13 +152,14 @@ int main(int argc, char** argv){
                     if(status)Send(connfd, okAction, strlen(okAction));
                     break;
                 case CWD:
-                    args = trim(args);
-                    status = cd (args);
+                    sendMsgLiteral = trim(args);
+                    status = cd (sendMsgLiteral);
                     if(status == -1) Send(connfd, invDir, strlen(invDir));
                     else {
                         snprintf(sendMsgBuff, msgBuff, "%s %s\r\n", "250 Current Directory changed to :", currPath);
                         Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
                     }
+                    sendMsgLiteral = NULL;
                     break;
                 break;
                 case RETR:
@@ -211,9 +211,11 @@ int main(int argc, char** argv){
                     Send(connfd, badComm, strlen(badComm));
                     break;
                 }
-                memset(comm, '\0', sizeof(comm));
-                memset(recvBuff, '\0', sizeof(recvBuff));
-                memset(sendMsgBuff, '\0', sizeof(sendMsgBuff));
+                memset(comm, 0, commBuff);
+                memset(recvBuff, 0, msgBuff);
+                memset(sendMsgBuff, 0, msgBuff);
+                memset(args, 0, msgBuff);
+                free(currPath);
             }
             
         }
