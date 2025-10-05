@@ -61,8 +61,12 @@ void setUserVariables(const int user){
     currPath = strcpy(currPath, home);
 }
 
-int initDataCon(const int port, const int connfd){
-    const int dataPort = port;
+int initDataCon(const int connfd){
+    struct tuple in;
+    in = dataConInit(lFPort);
+    const int listenfd = in.listen;
+    const int dataPort = in.port;
+    
     int out[6];
     out[0] = 127;
     out[1] = 0;
@@ -70,7 +74,6 @@ int initDataCon(const int port, const int connfd){
     out[3] = 1;
     out[4] = dataPort/256;
     out[5] = dataPort%256;
-    const int listenfd = init(dataPort);
     int datafd;
     char buff[msgBuff];
     snprintf(buff, sizeof(buff), "%s (%d,%d,%d,%d,%d,%d)\r\n", okPasv, out[0], out[1], out[2], out[3], out[4], out[5]);
@@ -104,7 +107,7 @@ int main(int argc, char** argv){
         if((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL))==-1)err_sys("accept error\n");
         
         time_t tick = time(NULL);
-        char temp[sizeof(ok220)+sizeof(ctime(&tick))];
+        char temp[sizeof(ok220)+sizeof(ctime(&tick))];//sizeof ctime fix later
         sprintf(temp,"%s (%s)\r\n", ok220, strtok(ctime(&tick), "\n"));
 
         Send(connfd, temp, strlen(temp));
@@ -200,7 +203,7 @@ int main(int argc, char** argv){
                 break;
                 case PASV:
                     close(datafd);
-                    datafd = initDataCon(atoi(argv[1])-1, connfd);
+                    datafd = initDataCon(connfd);
                     break;
                 case QUIT:
                     Send(connfd, okClose, strlen(okClose));

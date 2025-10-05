@@ -1,13 +1,10 @@
-#include <stdio.h>
+#include "dataCon.c"
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <string.h>
 
 #define LISTENQ 5
 
-void err_sys(const char* x){
-    perror(x);
-}
 
 int init(int port){
     int listenfd;
