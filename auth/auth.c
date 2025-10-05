@@ -10,11 +10,12 @@
 #define okUser "331 User name okay, password needed.\r\n"
 #define invUName "430 Invalid Username or Password.\r\n"
 #define okNA "202 Command not implemented, superfluous at this site.\r\n"
-#define invInp "500 Syntax error, command unrecognized and the requested action did not take place. This may include errors such as command line too long.\r\n"
+#define invInp "500 not understood/\r\n"
 #define maxUNameL 50 
 #define maxPlen 100
 #define retry 1
 
+int gotoCounter = 0;
 
 char *ltrim(char *s)
 {
@@ -101,13 +102,21 @@ int userAuth(const int connfd){
     char buff[maxUNameL];
     char* inp[2];
     int read = -1;
-    if((read = recv(connfd, buff, maxUNameL, 0))==-1)failureLog("unable to read");
+    i:if(gotoCounter>2){
+        gotoCounter = 0;
+        return -1;
+    }
+    if((read = Recv(connfd, buff, maxUNameL))==-1)perror("unable to read");
 
     inp[0] = trim(strtok(buff, " "));
     inp[1] = trim(strtok(NULL, "\n"));
 
     if(strcmp(inp[0], "USER")!=0){
-        Send(connfd, okNA, strlen(okNA));
+        char sendBuff[100];
+        snprintf(sendBuff, sizeof(sendBuff), "500 %s command not understood.\r\n", inp[0]);
+        Send(connfd, sendBuff, strlen(sendBuff));
+        gotoCounter++;
+        goto i;
         return -1;
     }
 

@@ -30,6 +30,7 @@
 #define SYST 6384523416
 #define PASV 6384389471
 #define FEAT 6384033861
+#define TYPE 6384559239
 
 #define ok220 "220 Connected to zerkxes FTP server."
 #define okPass "230 User logged in, proceed.\r\n"
@@ -41,6 +42,7 @@
 #define invDir "550 Requested action not taken. No such file or directory.\r\n"
 #define okEnv "215 Linux 6.8.0-60-generic #63-Ubuntu GNU/Linux\r\n"
 #define okClose "221 Tatah.\r\n"
+#define invSyn "501 Syntax error in parameters or arguments.\r\n"
 
 unsigned long hash(const char *str)
 {
@@ -104,16 +106,16 @@ int main(int argc, char** argv){
     const int listenfd = init(atoi(argv[1]));
 
     for(;;){
-
         if((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL))==-1)err_sys("accept error\n");
         
-        time_t tick = time(NULL);
+        time_t tick ;
+        tick = time(NULL);
         char temp[sizeof(ok220)+sizeof(ctime(&tick))];//sizeof ctime fix later
         sprintf(temp,"%s (%s)\r\n", ok220, strtok(ctime(&tick), "\n"));
 
         Send(connfd, temp, strlen(temp));
-
-        const int user = userAuth(connfd);
+        
+        const int user;userAuth(connfd);
         if(user==-1){
             if((close(connfd))==-1)err_sys("close conn error\n");
         }
@@ -127,6 +129,7 @@ int main(int argc, char** argv){
         Send(connfd, "230 Welcome sirs\r\n", strlen("230 Welcome sirs\r\n"));
         
         setUserVariables(user);
+        char type = 'I';
 
         //start of user session
         for(;;){
@@ -165,6 +168,17 @@ int main(int argc, char** argv){
                     }
                     sendMsgLiteral = NULL;
                     break;
+                break;
+                case TYPE:
+                    if(strcmp(trim(args), "A")==0){
+                        type = 'A';
+                        Send(connfd, "200 Type set to A\r\n", strlen("200 Type set to A\r\n"));
+                    }
+                    else if(strcmp(trim(args), "I")==0){
+                        type = 'I';
+                        Send(connfd, "200 Type set to I\r\n", strlen("200 Type set to I\r\n"));
+                    }
+                    else Send(connfd, invSyn, strlen(invSyn));
                 break;
                 case RETR:
                 break;
