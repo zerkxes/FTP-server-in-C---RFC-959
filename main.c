@@ -91,9 +91,6 @@ int initDataCon(const int connfd){
     if((datafd = accept(listenfd,
          (struct sockaddr*)&clientaddr,
          &clientaddr_size))==-1)err_sys("datacon accept error\r\n");
-    // memset(buff, 0, sizeof(buff));
-    // snprintf(buff, sizeof(buff), "%s (%s)\r\n", okFile, inet_ntoa(clientaddr.sin_addr));
-    // Send(connfd, buff, strlen(buff));
     return datafd;
 }
 
