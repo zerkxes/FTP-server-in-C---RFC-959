@@ -200,8 +200,15 @@ int main(int argc, char** argv){
                     }
                     break;
                 case RETR:
+                    if(user<=0){
+                        Send(connfd,
+                             "550 Requested action not taken. Access denied\r\n",
+                             strlen("550 Requested action not taken. Access denied\r\n"));
+                        closeDataCon(datafd);
+                        break;
+                    }
                     sendMsgLiteral = trim(args);
-                    FILE* fp = getFile(sendMsgLiteral);
+                    fp = getFile(sendMsgLiteral);
                     if(fp==NULL){
                         snprintf(sendMsgBuff, msgBuff, "550 %s: No such file or directory.\r\n", args);
                         Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
@@ -225,6 +232,13 @@ int main(int argc, char** argv){
                     closeDataCon(datafd);
                     break;
                 case STOR:
+                    if(user<=1){
+                        Send(connfd,
+                             "550 Requested action not taken. Access denied\r\n",
+                             strlen("550 Requested action not taken. Access denied\r\n"));
+                        closeDataCon(datafd);
+                        break;
+                    }
                     sendMsgLiteral = trim(args);
                     Send(connfd,
                          "150 Server ready to receive data.\r\n",
@@ -244,9 +258,29 @@ int main(int argc, char** argv){
                 case APPE:
                 break;
                 case RNFR:
-                //fall through
+                    fp = getPath(rtrim(args));
+                    if(fp==NULL){
+                        Send(connfd,
+                             "550 Requested action not taken. File unavailable.\r\n",
+                             strlen("550 Requested action not taken. File unavailable.\r\n"));
+                        fclose(fp);
+                        break;
+                    }
+                    Send(connfd,
+                         "350 Requested file action pending further information\r\n",
+                         strlen("350 Requested file action pending further information.\r\n"));
+                    memset(buff, 0, sizeof(buff));
+                    snprintf(buff, sizeof(buff), "%s", args);
+                    break;
                 case RNTO:
-                break;
+                    status = mv(buff, trim(args));
+                    if(status == -1)Send(connfd,
+                         "553 Requested action not taken. Filename not allowed.\r\n",
+                         strlen("553 Requested action not taken. Filename not allowed.\r\n"));
+                    else Send(connfd,
+                         "250 Requested action was okay, completed.\r\n",
+                         strlen("250 Requested action was okay, completed.\r\n"));
+                    break;
                 case ABOR:
                 break;
                 case DELE:

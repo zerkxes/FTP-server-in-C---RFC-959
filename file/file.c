@@ -65,6 +65,9 @@ char* ls(){
         }
         else readBuff[n++] = a;
     }
+    readBuff[n]='\r';
+    readBuff[n+1]='\n';
+    readBuff[n+2]='\0';
     pclose(fp);
     return readBuff;
 }
@@ -75,6 +78,16 @@ FILE* getFile(const char* fname){
     char path[len + 2];
     snprintf(path, sizeof(path), "%s/%s", pwd(), fname);
     if((fp = fopen(path, "rb"))==NULL){
+        fclose(fp);
+        if(ENOENT == errno) fprintf(stderr, "%s", "file does not exist");
+        return NULL;
+    }
+    return fp;//remember to close this
+}
+
+FILE* getPath(const char* path){
+    FILE* fp;
+    if((fp = fopen(path, "r"))==NULL){
         fclose(fp);
         if(ENOENT == errno) fprintf(stderr, "%s", "file does not exist");
         return NULL;
@@ -150,4 +163,10 @@ int storF(const int dataCon, const char* fname){
     fclose(fp);
     free(fwrChunk);
     return 1;
+}
+
+int mv(const char* oldP, const char* newP){
+    char comm[msgBuff];
+    snprintf(comm, msgBuff, "mv %s %s", oldP, newP);
+    return system(comm);
 }

@@ -54,6 +54,7 @@ int Recv(const int connfd, char* buff, const size_t size){
 int authHelper(const int connfd, const char* uName){
     char getLine[maxUNameL+maxPlen];
     char getPass[maxPlen];
+    int uType = -1;
     FILE* fp = NULL;
     char* p = NULL;
     int found = 0;
@@ -65,7 +66,7 @@ int authHelper(const int connfd, const char* uName){
     
     while(fgets(getLine, sizeof(getLine), fp)){
         char temp[maxUNameL];
-        sscanf(getLine, "%s %s", temp, getPass);
+        sscanf(getLine, "%s %s %d", temp, getPass, &uType);
         if(strcmp(trim(temp), uName)==0){
             found = 1;
             break;
@@ -80,7 +81,7 @@ int authHelper(const int connfd, const char* uName){
     Send(connfd, okUser, strlen(okUser));
 
     char pass[maxPlen];
-    if((recv(connfd, pass, maxPlen, 0))<0)failureLog("Unable to read passwword\n");
+    if((recv(connfd, pass, maxPlen, 0))<0)failureLog("Unable to read password\n");
     
 
     p = strtok(pass, " ");
@@ -91,7 +92,9 @@ int authHelper(const int connfd, const char* uName){
 
     p = strtok(NULL, "\n");
     
-    if(strcmp(trim(p),trim(getPass))==0)return 1;
+    if(strcmp(trim(p),trim(getPass))==0){
+        return uType;
+    }
     else {
         Send(connfd, invUName, strlen(invUName));
         return -1;
