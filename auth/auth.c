@@ -56,7 +56,7 @@ int authHelper(const int connfd, const char* uName){
     char* p = NULL;
     int found = 0;
 
-    if((fp=fopen("/home/basu/Documents/FTP-server-in-C---RFC-959/auth/users.txt", "r"))==NULL){
+    if((fp=fopen("auth/users.txt", "r"))==NULL){
         perror("unable to open file\n");
         return -1;
     }

@@ -10,6 +10,7 @@
 #include <time.h>
 
 #define commBuff 5
+#define argBuff 1024
 #define CDUP 6383925617
 #define CWD 193452899
 #define RETR 6384465730
@@ -31,6 +32,7 @@
 #define PASV 6384389471
 #define FEAT 6384033861
 #define TYPE 6384559239
+#define SIZE 6384506208
 
 #define ok220 "220 Connected to zerkxes FTP server."
 #define okPass "230 User logged in, proceed.\r\n"
@@ -105,7 +107,7 @@ int main(int argc, char** argv){
     if(argc!=2)err_sys("No port provided. Usage <executable> <port number>");
     const int listenfd = init(atoi(argv[1]));
 
-    for(;;){
+    i:for(;;){
         if((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL))==-1)err_sys("accept error\n");
         
         time_t tick ;
@@ -115,9 +117,11 @@ int main(int argc, char** argv){
 
         Send(connfd, temp, strlen(temp));
         
-        const int user;userAuth(connfd);
+        const int user = userAuth(connfd);
         if(user==-1){
+            Send(connfd, "530 Not logged in.\r\n", strlen("530 Not logged in.\r\n"));
             if((close(connfd))==-1)err_sys("close conn error\n");
+            goto i;
         }
 
         // if((fp = fopen("welcome.txt", "r"))==NULL)err_sys("welcome.txt read error\n");
@@ -125,7 +129,7 @@ int main(int argc, char** argv){
         // fclose(fp);
         // char sendBuff[msgBuff+4];
         // snprintf(sendBuff, sizeof(sendBuff),"%s\r\n", buff);
-        // Send(connfd, sendBuff, strlen(buff));
+        // Send(connfd, sendBuff, strlen(sendBuff));
         Send(connfd, "230 Welcome sirs\r\n", strlen("230 Welcome sirs\r\n"));
         
         setUserVariables(user);
@@ -135,7 +139,7 @@ int main(int argc, char** argv){
         for(;;){
 
             char recvBuff[msgBuff];char comm[commBuff];
-            char args[msgBuff];
+            char args[argBuff];
             char sendMsgBuff[msgBuff +4];
             char* sendMsgLiteral = NULL;
             int status = -1;
@@ -150,9 +154,8 @@ int main(int argc, char** argv){
                     Send(connfd, okEnv, strlen(okEnv));
                     break;
                 case FEAT:
-                    sendMsgLiteral = "211-Supported Extensions:\r\n"" PASV\r\n"" PWD\r\n"" LIST\r\n"" CWD\r\n"" CDUP\r\n"" QUIT\r\n""211 End.\r\n";
+                    sendMsgLiteral = "211-Supported Extensions:\r\n"" PASV\r\n"" PWD\r\n"" LIST\r\n"" CWD\r\n"" CDUP\r\n"" QUIT\r\n"" SIZE\r\n""211 End.\r\n";
                     Send(connfd, sendMsgLiteral, strlen(sendMsgLiteral));
-                    sendMsgLiteral = NULL;
                     break;
                 case CDUP:
                     status = cdup();
@@ -166,7 +169,6 @@ int main(int argc, char** argv){
                         snprintf(sendMsgBuff, msgBuff, "%s %s\r\n", "250 Current Directory changed to :", currPath);
                         Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
                     }
-                    sendMsgLiteral = NULL;
                     break;
                 break;
                 case TYPE:
@@ -180,6 +182,18 @@ int main(int argc, char** argv){
                     }
                     else Send(connfd, invSyn, strlen(invSyn));
                 break;
+                case SIZE:
+                    sendMsgLiteral = trim(args);
+                    status = size(sendMsgLiteral);
+                    if(status == -1){
+                        snprintf(sendMsgBuff, msgBuff, "550 %s: No such file or directory.\r\n", args);
+                        Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
+                    }
+                    else {
+                        snprintf(sendMsgBuff, msgBuff, "213 %d \r\n", status);
+                        Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
+                    }
+                    break;
                 case RETR:
                 break;
                 case STOR:
@@ -233,7 +247,8 @@ int main(int argc, char** argv){
             memset(comm, 0, commBuff);
             memset(recvBuff, 0, msgBuff);
             memset(sendMsgBuff, 0, msgBuff);
-            memset(args, 0, msgBuff);
+            memset(args, 0, argBuff);
+            sendMsgLiteral = NULL;
         }
         u:free(currPath);
     }   

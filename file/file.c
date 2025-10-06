@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,4 +61,22 @@ char* ls(){
     }
     pclose(fp);
     return readBuff;
+}
+
+int size(const char* fname){
+    FILE* fp;
+    int len = strlen(fname) + strlen(pwd());
+    char path[len + 2];
+    snprintf(path, sizeof(path), "%s/%s", pwd(), fname);
+    if((fp = fopen(path, "rb"))==NULL){
+        fclose(fp);
+        if(ENOENT == errno) fprintf(stderr, "%s", "file does not exist");
+        return -1;
+    }
+    unsigned int size;
+    fseek(fp, 0L, SEEK_END);
+    size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    fclose(fp);
+    return size;
 }
