@@ -38,7 +38,7 @@
 #define okPass "230 User logged in, proceed.\r\n"
 #define badComm "503 Bad sequence of commands.\r\n"
 #define okPasv "227 Entering Passive Mode"
-#define okFile "150 File status okay. Data connection accepted from"
+#define okFile "150 Opening ASCII mode data connection for file list"
 #define okCloseDataCon "226 Closing data connection. Requested file action successful.\r\n"
 #define okAction "250 Requested file action was okay, completed.\r\n"
 #define invDir "550 Requested action not taken. No such file or directory.\r\n"
@@ -80,15 +80,20 @@ int initDataCon(const int connfd){
     out[5] = dataPort%256;
     int datafd;
     char buff[msgBuff];
-    snprintf(buff, sizeof(buff), "%s (%d,%d,%d,%d,%d,%d)\r\n", okPasv, out[0], out[1], out[2], out[3], out[4], out[5]);
+    snprintf(buff, sizeof(buff),
+     "%s (%d,%d,%d,%d,%d,%d)\r\n",
+     okPasv, out[0], out[1], out[2], out[3], out[4], out[5]);
+    
     Send(connfd, buff, strlen(buff));
 
     struct sockaddr_in clientaddr;
     socklen_t clientaddr_size = sizeof(clientaddr);
-    if((datafd = accept(listenfd, (struct sockaddr*)&clientaddr, &clientaddr_size))==-1)err_sys("datacon accept error\r\n");
-    memset(buff, 0, sizeof(buff));
-    snprintf(buff, sizeof(buff), "%s (%s)\r\n", okFile, inet_ntoa(clientaddr.sin_addr));
-    Send(connfd, buff, strlen(buff));
+    if((datafd = accept(listenfd,
+         (struct sockaddr*)&clientaddr,
+         &clientaddr_size))==-1)err_sys("datacon accept error\r\n");
+    // memset(buff, 0, sizeof(buff));
+    // snprintf(buff, sizeof(buff), "%s (%s)\r\n", okFile, inet_ntoa(clientaddr.sin_addr));
+    // Send(connfd, buff, strlen(buff));
     return datafd;
 }
 
@@ -104,7 +109,10 @@ int main(int argc, char** argv){
     FILE* fp = NULL;
     char buff[msgBuff+2];
     char tempMsg[100];
-    if(argc!=2)err_sys("No port provided. Usage <executable> <port number>");
+    if(argc!=2){
+        err_sys("No port provided. Usage <executable> <port number>");
+        exit(1);
+    }
     const int listenfd = init(atoi(argv[1]));
 
     i:for(;;){
@@ -133,16 +141,15 @@ int main(int argc, char** argv){
         Send(connfd, "230 Welcome sirs\r\n", strlen("230 Welcome sirs\r\n"));
         
         setUserVariables(user);
+        char recvBuff[msgBuff];char comm[commBuff];
+        char args[argBuff];
+        char sendMsgBuff[msgBuff +4];
+        char* sendMsgLiteral = NULL;
+        int status = -1;
         char type = 'I';
 
         //start of user session
         for(;;){
-
-            char recvBuff[msgBuff];char comm[commBuff];
-            char args[argBuff];
-            char sendMsgBuff[msgBuff +4];
-            char* sendMsgLiteral = NULL;
-            int status = -1;
             if(Recv(connfd, recvBuff, msgBuff) == -1)break;
             sscanf(recvBuff, "%s %s\r\n", comm, args);
             trim(comm);
@@ -166,7 +173,9 @@ int main(int argc, char** argv){
                     status = cd (sendMsgLiteral);
                     if(status == -1) Send(connfd, invDir, strlen(invDir));
                     else {
-                        snprintf(sendMsgBuff, msgBuff, "%s %s\r\n", "250 Current Directory changed to :", currPath);
+                        snprintf(sendMsgBuff,
+                             msgBuff, "%s %s\r\n",
+                             "250 Current Directory changed to :", currPath);
                         Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
                     }
                     break;
@@ -195,7 +204,30 @@ int main(int argc, char** argv){
                     }
                     break;
                 case RETR:
-                break;
+                    sendMsgLiteral = trim(args);
+                    FILE* fp = getFile(sendMsgLiteral);
+                    if(fp==NULL){
+                        snprintf(sendMsgBuff, msgBuff, "550 %s: No such file or directory.\r\n", args);
+                        Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
+                        fclose(fp);
+                        closeDataCon(datafd);
+                        break;//check later
+                    }
+                    fclose(fp);
+                    snprintf(sendMsgBuff,
+                         msgBuff, "150 Opening BINARY mode data connection for %s (%d)\r\n",
+                         args, size(args));
+                    Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
+
+                    status = retrF(datafd, sendMsgLiteral, 'I');
+                    if(status == -1)Send(connfd,
+                         "451 Requested action aborted. Local error in processing.\r\n",
+                         strlen("451 Requested action aborted. Local error in processing.\r\n"));
+                    else Send(connfd,
+                         "226 Data transfer complete.\r\n",
+                         strlen("226 Data transfer complete.\r\n"));
+                    closeDataCon(datafd);
+                    break;
                 case STOR:
                 break;
                 case STOU:
@@ -216,11 +248,15 @@ int main(int argc, char** argv){
                 break;
                 case PWD:
                     sendMsgLiteral = pwd();
-                    snprintf(sendMsgBuff, sizeof(sendMsgBuff), "257 \"%s\" %s\r\n", sendMsgLiteral, "is current working directory");
+                    snprintf(sendMsgBuff,
+                         sizeof(sendMsgBuff), "257 \"%s\" %s\r\n",
+                         sendMsgLiteral, "is current working directory");
                     Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
                     break;
                 case LIST:
                     sendMsgLiteral = ls();
+                    snprintf(sendMsgBuff, msgBuff, "%s\r\n", okFile);
+                    Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
                     Send(datafd, sendMsgLiteral, strlen(sendMsgLiteral));
                     free(sendMsgLiteral);
                     Send(connfd, okCloseDataCon, strlen(okCloseDataCon));

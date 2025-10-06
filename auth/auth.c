@@ -38,7 +38,9 @@ char *trim(char *s)
 
 int Send(int connfd, const char* buff, size_t size){
     int val = 0;
-    if((val = write(connfd, buff, size))==-1 && sleep(retry) && (val = write(connfd, buff, size)==-1))failureLog("unable to write");
+    if((val = write(connfd, buff, size))==-1
+     && sleep(retry)
+     && (val = write(connfd, buff, size)==-1))failureLog("unable to write");
     return val;
 }
 

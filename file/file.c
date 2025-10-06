@@ -1,12 +1,17 @@
 #include <errno.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #define home "/home/basu"
 #define msgBuff 2048
+#define sendFChunk 1048576
 #define error "451 Requested action aborted. Local error in processing.\r\n"
 
 int userType = -1;
@@ -63,7 +68,7 @@ char* ls(){
     return readBuff;
 }
 
-int size(const char* fname){
+FILE* getFile(const char* fname){
     FILE* fp;
     int len = strlen(fname) + strlen(pwd());
     char path[len + 2];
@@ -71,12 +76,49 @@ int size(const char* fname){
     if((fp = fopen(path, "rb"))==NULL){
         fclose(fp);
         if(ENOENT == errno) fprintf(stderr, "%s", "file does not exist");
-        return -1;
+        return NULL;
     }
+    return fp;//remember to close this
+}
+
+int size(const char* fname){
+    FILE* fp = getFile(fname);
+    if(fp==NULL)return -1;
     unsigned int size;
     fseek(fp, 0L, SEEK_END);
     size = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
     fclose(fp);
     return size;
+}
+
+int retrF(const int dataCon, const char* fname, const char type){
+    FILE* fp = getFile(fname);
+    if(fp==NULL)return -1;
+
+    char* freadChunk = malloc(sendFChunk);
+    size_t nbytes = 0;
+    
+    int yes = 1;
+    int res = 0;
+    if((res = setsockopt(dataCon,
+         IPPROTO_TCP,
+         TCP_NODELAY,
+         &yes,
+         sizeof(int)))==-1)fprintf(stderr, "%s", "failed to set tcp_nodelay");
+
+    while((nbytes = fread(freadChunk, 1, sendFChunk, fp))>0){
+        int offset = 0;
+        int sent = 0;
+        while((sent = write(dataCon, freadChunk+offset, nbytes))>0 || (sent==-1 && EINTR==errno)){
+            if(sent>0){
+                offset+=sent;
+                nbytes-=sent;
+            }
+        }
+        memset(freadChunk, 0, sendFChunk);
+    }
+    fclose(fp);
+    free(freadChunk);
+    return 1;
 }
