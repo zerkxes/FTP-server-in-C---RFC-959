@@ -12,6 +12,7 @@
 #define home "/home/basu"
 #define msgBuff 2048
 #define sendFChunk 1048576
+#define recvFChunk 10485760
 #define error "451 Requested action aborted. Local error in processing.\r\n"
 
 int userType = -1;
@@ -120,5 +121,33 @@ int retrF(const int dataCon, const char* fname, const char type){
     }
     fclose(fp);
     free(freadChunk);
+    return 1;
+}
+
+int storF(const int dataCon, const char* fname){
+    FILE* fp;
+    int len = strlen(fname) + strlen(pwd());
+    char path[len + 2];
+    snprintf(path, sizeof(path), "%s/%s", pwd(), fname);
+    if((fp = fopen(path, "wb")) == NULL)return -1;
+    char* fwrChunk = malloc(recvFChunk);
+
+    int yes = 1;
+    int res = 0;
+    if((res = setsockopt(dataCon,
+         IPPROTO_TCP,
+         TCP_NODELAY,
+         &yes,
+         sizeof(int)))==-1)fprintf(stderr, "%s", "failed to set tcp_nodelay");
+    
+    size_t nbytes = 0;
+    while((nbytes = read(dataCon, fwrChunk, recvFChunk))>0){
+        int offset = 0;
+        int recv = 0;
+        fwrite(fwrChunk, recvFChunk, 1, fp);
+        memset(fwrChunk, 0, recvFChunk);
+    }
+    fclose(fp);
+    free(fwrChunk);
     return 1;
 }
