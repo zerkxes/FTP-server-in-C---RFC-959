@@ -129,13 +129,12 @@ int main(int argc, char** argv){
             goto i;
         }
 
-        // if((fp = fopen("welcome.txt", "r"))==NULL)err_sys("welcome.txt read error\n");
-        // fread(buff, msgBuff, 1, fp);
-        // fclose(fp);
-        // char sendBuff[msgBuff+4];
-        // snprintf(sendBuff, sizeof(sendBuff),"%s\r\n", buff);
-        // Send(connfd, sendBuff, strlen(sendBuff));
-        Send(connfd, "230 Welcome sirs\r\n", strlen("230 Welcome sirs\r\n"));
+        if((fp = fopen("welcome.txt", "r"))==NULL)err_sys("welcome.txt read error\n");
+        fread(buff, msgBuff, 1, fp);
+        fclose(fp);
+        char sendBuff[msgBuff+4];
+        snprintf(sendBuff, sizeof(sendBuff),"%s\r\n", buff);
+        Send(connfd, sendBuff, strlen(sendBuff));
         
         setUserVariables(user);
         char recvBuff[msgBuff];char comm[commBuff];
