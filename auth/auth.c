@@ -36,6 +36,25 @@ char *trim(char *s)
     return rtrim(ltrim(s)); 
 }
 
+char *ltrim_s(char *s)
+{
+    while(isspace(*s)) s++;
+    return s;
+}
+
+char *rtrim_s(char *s)
+{
+    char* back = s + strlen(s);
+    while(isspace(*--back));
+    *(back+1) = '\0';
+    return s;
+}
+
+char *trim_s(char *s)
+{
+    return rtrim_s(ltrim_s(s)); 
+}
+
 int Send(int connfd, const char* buff, size_t size){
     int val = 0;
     if((val = write(connfd, buff, size))==-1
@@ -127,7 +146,11 @@ int userAuth(const int connfd){
         return -1;
     }
 
-    if(strcmp(inp[1], "anonymous")==0 || strcmp(inp[1], "ANONYMOUS")==0)return 0;
+    if(strcmp(inp[1], "anonymous")==0 || strcmp(inp[1], "ANONYMOUS")==0){
+        free(inp[0]);
+        free(inp[1]);
+        return 0;
+    }
     int f = authHelper(connfd, inp[1]);
     free(inp[0]);
     free(inp[1]);

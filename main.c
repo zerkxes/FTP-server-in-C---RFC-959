@@ -118,7 +118,7 @@ int main(int argc, char** argv){
         time_t tick ;
         tick = time(NULL);
         char* time = ctime(&tick);
-        char temp[strlen(ok220) + strlen(time) + 10];
+        char temp[strlen(ok220) + strlen(time) + 6];
         snprintf(temp, sizeof(temp),"%s (%s)\r\n", ok220, strtok(ctime(&tick), "\n"));
 
         Send(connfd, temp, strlen(temp));
@@ -149,7 +149,7 @@ int main(int argc, char** argv){
         for(;;){
             if(Recv(connfd, recvBuff, msgBuff) == -1)break;
             sscanf(recvBuff, "%s %s\r\n", comm, args);
-            trim(comm);
+            strcpy(comm,trim(comm));
 
             fprintf(stderr,"%s\n%s\n", comm, args);
 
@@ -166,8 +166,7 @@ int main(int argc, char** argv){
                     if(status)Send(connfd, okAction, strlen(okAction));
                     break;
                 case CWD:
-                    sendMsgLiteral = trim(args);
-                    status = cd (sendMsgLiteral);
+                    status = cd (trim_s(args));
                     if(status == -1) Send(connfd, invDir, strlen(invDir));
                     else {
                         snprintf(sendMsgBuff,
@@ -176,7 +175,6 @@ int main(int argc, char** argv){
                         Send(connfd, sendMsgBuff, strlen(sendMsgBuff));
                     }
                     break;
-                break;
                 case TYPE:
                     if(strcmp(trim(args), "A")==0){
                         type = 'A';
@@ -311,7 +309,6 @@ int main(int argc, char** argv){
                 case PORT:
                 break;
                 case PASV:
-                    close(datafd);
                     datafd = initDataCon(connfd);
                     break;
                 case QUIT:

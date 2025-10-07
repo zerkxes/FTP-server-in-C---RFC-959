@@ -20,18 +20,26 @@ char* currPath =NULL; // Moving up further than /home is not allowed
 
 int cd(const char* path){
     struct stat sb;
+    struct stat sb2;
     char temp[msgBuff];
+    fprintf(stderr, "%s", path);
     snprintf(temp, msgBuff, "%s/%s", home, path);
+
     if(stat(temp, &sb)==0 && S_ISDIR(sb.st_mode)){
         memset(currPath, 0, msgBuff);
         strcpy(currPath, temp);
+        return 1;
+    }
+    else if(stat(path, &sb2)==0 && S_ISDIR(sb2.st_mode)){
+        memset(currPath, 0, msgBuff);
+        strcpy(currPath, path);
         return 1;
     }
     else return -1;
 }
 
 int cdup(){
-    if(strcmp(currPath, home)==0)return 1;
+    if(strcmp(currPath, "/")==0)return 1;
     else {
         int len = strlen(currPath)-1;
         while(currPath[len]!='/')len--;
