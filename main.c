@@ -117,8 +117,9 @@ int main(int argc, char** argv){
         
         time_t tick ;
         tick = time(NULL);
-        char temp[sizeof(ok220)+sizeof(ctime(&tick))];//sizeof ctime fix later
-        sprintf(temp,"%s (%s)\r\n", ok220, strtok(ctime(&tick), "\n"));
+        char* time = ctime(&tick);
+        char temp[strlen(ok220) + strlen(time) + 10];
+        snprintf(temp, sizeof(temp),"%s (%s)\r\n", ok220, strtok(ctime(&tick), "\n"));
 
         Send(connfd, temp, strlen(temp));
         

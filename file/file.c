@@ -9,14 +9,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define home "/home/basu"
+#define home getenv("HOME")
 #define msgBuff 2048
 #define sendFChunk 1048576
 #define recvFChunk 10485760
 #define error "451 Requested action aborted. Local error in processing.\r\n"
 
 int userType = -1;
-char* currPath = home; // Moving up further than /home is not allowed
+char* currPath =NULL; // Moving up further than /home is not allowed
 
 int cd(const char* path){
     struct stat sb;
