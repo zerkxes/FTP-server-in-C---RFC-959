@@ -257,6 +257,13 @@ int main(int argc, char** argv){
                 case APPE:
                 break;
                 case RNFR:
+                    if(user<=1){
+                        Send(connfd,
+                             "550 Requested action not taken. Access denied\r\n",
+                             strlen("550 Requested action not taken. Access denied\r\n"));
+                        closeDataCon(datafd);
+                        break;
+                    }
                     fp = getPath(rtrim(args));
                     if(fp==NULL){
                         Send(connfd,
@@ -272,7 +279,14 @@ int main(int argc, char** argv){
                     snprintf(buff, sizeof(buff), "%s", args);
                     break;
                 case RNTO:
-                    status = mv(buff, trim(args));
+                    if(user<=1){
+                        Send(connfd,
+                             "550 Requested action not taken. Access denied\r\n",
+                             strlen("550 Requested action not taken. Access denied\r\n"));
+                        closeDataCon(datafd);
+                        break;
+                    }
+                    status = mv(buff, rtrim(args));
                     if(status == -1)Send(connfd,
                          "553 Requested action not taken. Filename not allowed.\r\n",
                          strlen("553 Requested action not taken. Filename not allowed.\r\n"));
