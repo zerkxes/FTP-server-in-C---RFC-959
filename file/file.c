@@ -173,6 +173,34 @@ int storF(const int dataCon, const char* fname){
     return 1;
 }
 
+char* appndNum(const char* fname, const unsigned int n){
+    char name[msgBuff/2];
+    char ext[4];
+    sscanf(fname, "%[^.].%s", name, ext);
+    char* out = malloc(msgBuff);
+    snprintf(out, sizeof(out), "%s%d.%s", name, n, ext);
+    return out;
+}
+
+int storFU(const int dataCon, const char* fname){
+    int len = strlen(fname) + strlen(pwd());
+    char path[len + 2];
+    snprintf(path, sizeof(path), "%s/%s", pwd(), fname);
+    FILE* fp;
+    unsigned int i = 0;
+    char *newN = NULL;
+    while((fp = getFile(path))!=NULL){
+        memset(path, 0, sizeof(path));
+        newN = appndNum(fname, i++);
+        snprintf(path, sizeof(path), "%s/%s",pwd(), appndNum(fname, i++));
+    }
+    free(newN);
+    fclose(fp);
+    return storF(dataCon, path);
+}
+
+
+
 int mv(const char* oldP, const char* newP){
     char comm[msgBuff];
     snprintf(comm, msgBuff, "mv %s %s", oldP, newP);
