@@ -253,7 +253,27 @@ int main(int argc, char** argv){
                     closeDataCon(datafd);
                     break;
                 case STOU:
-                break;
+                    if(user<=1){
+                        Send(connfd,
+                             "550 Requested action not taken. Access denied\r\n",
+                             strlen("550 Requested action not taken. Access denied\r\n"));
+                        closeDataCon(datafd);
+                        break;
+                    }
+                    sendMsgLiteral = trim(args);
+                    Send(connfd,
+                         "150 Server ready to receive data.\r\n",
+                         strlen("150 Server ready to receive data.\r\n"));
+                    
+                    status = storFU(datafd, sendMsgLiteral);
+                    if(status == -1)Send(connfd,
+                         "451 Requested action aborted. Local error in processing.\r\n",
+                         strlen("451 Requested action aborted. Local error in processing.\r\n"));
+                    else Send(connfd,
+                         "226 Data transfer complete.\r\n",
+                         strlen("226 Data transfer complete.\r\n"));
+                    closeDataCon(datafd);
+                    break;
                 case APPE:
                 break;
                 case RNFR:
