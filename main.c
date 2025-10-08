@@ -317,11 +317,35 @@ int main(int argc, char** argv){
                 case ABOR:
                 break;
                 case DELE:
-                break;
+                    sendMsgLiteral = trim(args);
+                    status = rmFiles(sendMsgLiteral, NULL, 0, NULL);
+                    if(status == -1)Send(connfd,
+                         "550 Requested action not taken. Unauthorized action or file missing.\r\n",
+                         strlen("550 Requested action not taken. Unauthorized action or file missing.\r\n"));
+                    else Send(connfd,
+                         "250 Requested action was okay, completed.\r\n",
+                         strlen("250 Requested action was okay, completed.\r\n"));
+                    break;
                 case RMD:
-                break;
+                    sendMsgLiteral = trim_s(args);
+                    status = rmd(sendMsgLiteral);
+                    if(status == -1)Send(connfd,
+                         "550 Requested action not taken. Unauthorized action or bad path\r\n",
+                         strlen("550 Requested action not taken. Unauthorized action or bad path\r\n"));
+                    else Send(connfd,
+                         "250 Requested action was okay, completed.\r\n",
+                         strlen("250 Requested action was okay, completed.\r\n"));
+                    break;
                 case MKD:
-                break;
+                    sendMsgLiteral = rtrim(args);
+                    status = mkd(sendMsgLiteral);
+                    if(status == -1)Send(connfd,
+                         "550 Requested action not taken. Path already exists.\r\n",
+                         strlen("550 Requested action not taken. Path already exists.\r\n"));
+                    else Send(connfd,
+                         "257 Requested action was okay, completed.\r\n",
+                         strlen("257 Requested action was okay, completed.\r\n"));
+                    break;
                 case PWD:
                     sendMsgLiteral = pwd();
                     snprintf(sendMsgBuff,

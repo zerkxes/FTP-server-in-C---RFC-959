@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 500
 #include <errno.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
@@ -8,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <ftw.h>
 
 #define home getenv("HOME")
 #define msgBuff 2048
@@ -22,7 +24,6 @@ int cd(const char* path){
     struct stat sb;
     struct stat sb2;
     char temp[msgBuff];
-    fprintf(stderr, "%s", path);
     snprintf(temp, msgBuff, "%s/%s", home, path);
 
     if(stat(temp, &sb)==0 && S_ISDIR(sb.st_mode)){
@@ -205,4 +206,41 @@ int mv(const char* oldP, const char* newP){
     char comm[msgBuff];
     snprintf(comm, msgBuff, "mv %s %s", oldP, newP);
     return system(comm);
+}
+
+int mkd(const char* path){
+    struct stat sb;
+    struct stat sb2;
+    char temp[msgBuff];
+    snprintf(temp, msgBuff, "%s/%s", home, path);
+
+    if(stat(temp, &sb)==0 && S_ISDIR(sb.st_mode))return -1;
+    else if(stat(path, &sb2)==0 && S_ISDIR(sb2.st_mode))return -1;
+    else {
+        if((mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))==-1)return -1;
+        return 1;
+    }
+}
+
+static int rmFiles(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb)
+{
+    if(remove(pathname) < 0)
+    {
+        perror("ERROR: remove");
+        return -1;
+    }
+    return 0;
+}
+
+int rmd(const char* path)
+{
+    // Delete the directory and its contents by traversing the tree in reverse order, without crossing mount boundaries and symbolic links
+
+    if (nftw(path, rmFiles,10, FTW_DEPTH|FTW_MOUNT|FTW_PHYS) < 0)
+    {
+        perror("ERROR: ntfw");
+        return -1;
+    }
+
+    return 1;
 }
